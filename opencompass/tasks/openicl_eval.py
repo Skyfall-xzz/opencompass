@@ -121,8 +121,9 @@ class OpenICLEvalTask(BaseTask):
             pred_dicts = copy.deepcopy(preds)
             preds = {k: [pred.get(k) for pred in preds] for k in preds[0]}
 
-            pred_strs = preds.pop('prediction')
-
+            pred_strs = preds.pop('prediction', None)
+            pred_list_flag = pred_strs is not None and isinstance(
+                pred_strs[0], list)
             if ('pred_role' in self.eval_cfg
                     and 'meta_template' in self.model_cfg
                     and not MODELS.get(self.model_cfg['type']).is_api):
@@ -131,17 +132,15 @@ class OpenICLEvalTask(BaseTask):
                 parser = LMTemplateParser(self.model_cfg['meta_template'])
                 role = parser.roles[self.eval_cfg['pred_role']]
                 if sc_size is not None:
-                    for pred in pred_strs:
-                        if not isinstance(pred, list):
-                            raise TypeError(
-                                'The prediction for Self-Consistency'
-                                'must be list.')
-                        pred_strs.append([
-                            self._extract_role_pred(sc_pred,
-                                                    role.get('begin', None),
-                                                    role.get('end', None))
-                            for sc_pred in pred
-                        ])
+                    assert pred_list_flag, (
+                        'The prediction for Self-Consistency'
+                        'must be list.')
+                if pred_list_flag:
+                    pred_strs = [[
+                        self._extract_role_pred(_pred, role.get('begin', None),
+                                                role.get('end', None))
+                        for _pred in pred
+                    ] for pred in pred_strs]
                 else:
                     pred_strs = [
                         self._extract_role_pred(pred, role.get('begin', None),
@@ -155,7 +154,7 @@ class OpenICLEvalTask(BaseTask):
                 proc = kwargs.pop('type')
                 if isinstance(proc, str):
                     proc = TEXT_POSTPROCESSORS.get(proc)
-                if sc_size is not None:
+                if pred_list_flag:
                     pred_strs = [[proc(s, **kwargs) for s in preds]
                                  for preds in pred_strs]
                 else:
@@ -168,10 +167,17 @@ class OpenICLEvalTask(BaseTask):
                 ]
 
             icl_evaluator = ICL_EVALUATORS.build(self.eval_cfg['evaluator'])
+            # need results dir to save other files
+            out_path = get_infer_output_path(
+                self.model_cfg, self.dataset_cfg,
+                osp.join(self.work_dir, 'results'))
+            icl_evaluator._out_dir = osp.splitext(out_path)[
+                0]  # strip extension
 
             preds['predictions'] = pred_strs
             preds['references'] = (test_set[self.output_column]
                                    if self.output_column else None)
+            preds['test_set'] = test_set
             preds = {
                 k: preds[k]
                 for k in signature(icl_evaluator.score).parameters
@@ -192,7 +198,8 @@ class OpenICLEvalTask(BaseTask):
                             'incorrect_bpb'] = self.calculate_bpb(pred_dicts)
                     else:
                         result['incorrect_bpb'] = result['correct_bpb'] = -1
-                except Exception:
+                except Exception as e:
+                    self.logger.warning(f'Skip dumping details due to: {e}.')
                     result['incorrect_bpb'] = result['correct_bpb'] = -1
             else:
                 result.pop('details', None)
@@ -282,13 +289,19 @@ class OpenICLEvalTask(BaseTask):
                 result['predictions'] = str(predictions[i])
                 result['references'] = str(references[i])
                 result['correct'] = str(predictions[i]) == str(references[i])
-            else:
+            elif details is not None:
                 results['type'] = 'GEN'
                 result['prompt'] = origin_prediction['origin_prompt']
                 result['origin_prediction'] = pred_dicts[i]['prediction']
                 result['predictions'] = details[i]['pred']
                 result['references'] = details[i]['answer']
                 result['correct'] = details[i]['correct']
+            else:
+                results['type'] = 'GEN'
+                result['prompt'] = origin_prediction['origin_prompt']
+                result['origin_prediction'] = pred_dicts[i]['prediction']
+                result['predictions'] = str(predictions[i])
+                result['references'] = str(references[i])
             results[str(i)] = result
         return results
 

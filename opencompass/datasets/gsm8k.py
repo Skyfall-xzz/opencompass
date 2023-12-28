@@ -21,7 +21,6 @@ class GSM8KDataset(BaseDataset):
             with open(split_path, 'r', encoding='utf-8') as f:
                 for line in f:
                     line = json.loads(line.strip())
-                    line['answer']
                     dataset.append(line)
             datasets[split] = Dataset.from_list(dataset)
         return DatasetDict(datasets)
@@ -49,9 +48,10 @@ def gsm8k_postprocess(text: str) -> str:
             break
     ret1 = ''
     for i in range(len(ret)):
-        if ret[i].isdigit():
+        # deal with potential float number
+        if ret[i].isdigit() or ret[i] == '.':
             ret1 += ret[i]
-    return ret1
+    return ret1.strip('.')
 
 
 class Gsm8kEvaluator(BaseEvaluator):
@@ -87,15 +87,23 @@ class Gsm8kAgentEvaluator(BaseEvaluator):
     def __init__(self, action: str = 'PythonInterpreter'):
         self.action = action
 
+    def is_equal(self, pred, refer):
+        try:
+            if pred == refer or abs(float(pred) - int(refer)) < 1e-6:
+                return True
+        except Exception:
+            pass
+        return False
+
     def soft_equal(self, pred, refer, step):
         try:
             soft_pred = step['result']['text']
-            if str(int(float(soft_pred))) == refer:
+            if abs(float(soft_pred) - int(refer)) < 1e-6:
                 return True
         except Exception:
             # result might not exists
             # text cannot convert to float
-            print(pred, soft_pred, refer)
+            pass
         return False
 
     def get_action(self, step):
@@ -105,6 +113,8 @@ class Gsm8kAgentEvaluator(BaseEvaluator):
 
     def score(self, predictions, references, steps):
         """Calculate accuracy."""
+        if len(predictions) != len(references):
+            return {'error': 'preds and refrs have different length'}
 
         row_reasoning_scope = 0
         action_scope = 0
@@ -114,7 +124,7 @@ class Gsm8kAgentEvaluator(BaseEvaluator):
         total = len(references)
         for pred, refer, step in zip(predictions, references, steps):
             # if final answer right
-            if pred == refer:
+            if self.is_equal(pred, refer):
                 if self.get_action(step):
                     final_scope += 1
                 else:
@@ -133,6 +143,6 @@ class Gsm8kAgentEvaluator(BaseEvaluator):
             reasoning_acc=100 *
             (reasoning_scope + final_scope + row_reasoning_scope) / total,
             code_acc=100 * (code_scope + final_scope) / total,
-            action_acc=100 * (action_scope + final_scope) / total,
+            action_pct=100 * (action_scope + final_scope) / total,
         )
         return result

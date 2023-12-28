@@ -141,12 +141,19 @@ class Llama2Chat(BaseModel):
                     path: str,
                     max_seq_len: int,
                     max_batch_size: int,
-                    tokenizer_path: Optional[str] = None):
+                    tokenizer_path: Optional[str] = None,
+                    force_bf16=False):
         from llama import Llama
         self.generator = Llama.build(path, tokenizer_path, max_seq_len,
                                      max_batch_size)
         self.tokenizer = self.generator.tokenizer
         self.model = self.generator.model
+        if force_bf16:
+            # force set model to `bfloat16` to fix
+            # the exception of 'RuntimeError: probability tensor
+            # contains either `inf`, `nan` or element < 0',
+            # encountered during the inference of llama2-7b
+            self.model = self.model.bfloat16()
 
     def _load_tokenizer(self, tokenizer_path: str):
         from llama import Tokenizer
@@ -172,12 +179,14 @@ class Llama2Chat(BaseModel):
                 dialog = []
                 for item in input:
                     msg = {'content': item['prompt']}
-                    if item['role'] == 'HUMAN':
+                    if item['role'].upper() == 'HUMAN':
                         msg['role'] = 'user'
-                    elif item['role'] == 'BOT':
+                    elif item['role'].upper() == 'BOT':
                         msg['role'] = 'assistant'
-                    elif item['role'] == 'SYSTEM':
+                    elif item['role'].upper() == 'SYSTEM':
                         msg['role'] = 'system'
+                    else:
+                        raise ValueError(f'Unknown role: {item["role"]}')
                     dialog.append(msg)
             dialogs.append(dialog)
 
