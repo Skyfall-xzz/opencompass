@@ -1,7 +1,11 @@
+antlr4-python3-runtime==4.11
+ipykernel
+ipython
 json5
 jupyter
 jupyter_client
 jupytext
 lagent
+networkx
 scikit-image
-sympy
+sympy==1.12

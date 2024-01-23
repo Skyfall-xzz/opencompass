@@ -70,6 +70,8 @@ OpenCompass 上手路线
    advanced_guides/subjective_evaluation.md
    advanced_guides/circular_eval.md
    advanced_guides/contamination_eval.md
+   advanced_guides/compassbench_intro.md
+   advanced_guides/needleinahaystack_eval.md
 
 .. _工具:
 .. toctree::

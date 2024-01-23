@@ -16,11 +16,14 @@ from jupyter_client import KernelManager
 from lagent.actions.base_action import BaseAction
 from lagent.schema import ActionReturn, ActionStatusCode
 
-WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR', '/tmp/workspace')
+WORK_DIR = os.getenv('CODE_INTERPRETER_WORK_DIR',
+                     f"{os.path.abspath('./output_images')}")
 
 DEFAULT_DESCRIPTION = """启动Jupter Kernel用于执行Python代码。"""
 
 START_CODE = """
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 def input(*args, **kwargs):
     raise NotImplementedError('Python input() function is disabled.')
 
@@ -54,6 +57,8 @@ class IPythonInterpreter(BaseAction):
         user_data_dir (str): Specified the user data directory for files
             loading. If set to `ENV`, use `USER_DATA_DIR` environment variable.
             Defaults to `ENV`.
+        force_user_data (bool): Whether to force use user data.
+            Defaults to True.
     """
 
     _KERNEL_CLIENTS = {}
@@ -65,7 +70,8 @@ class IPythonInterpreter(BaseAction):
                  disable_description: Optional[str] = None,
                  timeout: int = 20,
                  trim_output: Optional[int] = 1024,
-                 user_data_dir: str = 'ENV') -> None:
+                 user_data_dir: str = 'ENV',
+                 force_user_data: bool = True) -> None:
         super().__init__(description, name, enable, disable_description)
 
         self.timeout = timeout
@@ -74,7 +80,16 @@ class IPythonInterpreter(BaseAction):
 
         if user_data_dir:
             # user_data_dir = os.path.dirname(user_data_dir)
+            # in case change of dirs
+            assert os.path.exists(user_data_dir), \
+                f'{user_data_dir} does not exist.'
+            user_data_dir = os.path.abspath(user_data_dir)
             user_data_dir = f"import os\nos.chdir('{user_data_dir}')"
+        else:
+            if force_user_data:
+                raise ValueError('user_data_dir is not set. Please '
+                                 'set force_user_data to False if '
+                                 'no extra data needed.')
         self.user_data_dir = user_data_dir
         self._initialized = False
         self.trim_output = trim_output

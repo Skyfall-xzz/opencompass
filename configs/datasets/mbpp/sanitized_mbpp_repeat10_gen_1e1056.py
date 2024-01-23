@@ -56,8 +56,8 @@ sanitized_mbpp_eval_cfg = dict(evaluator=dict(type=MBPPPassKEvaluator), pred_rol
 sanitized_mbpp_datasets = [
     dict(
         type=SanitizedMBPPDataset,
-        abbr='sanitized_mbpp_pass10',
-        path='./sanitized-mbpp.jsonl',
+        abbr='sanitized_mbpp_repeat10',
+        path='./data/mbpp/sanitized-mbpp.jsonl',
         num_repeats=10,
         reader_cfg=sanitized_mbpp_reader_cfg,
         infer_cfg=sanitized_mbpp_infer_cfg,

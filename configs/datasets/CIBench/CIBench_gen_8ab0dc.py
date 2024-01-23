@@ -28,6 +28,7 @@ cibench_datasets = [
         abbr=f"cibench_generation_{lib}",
         type=CIBenchDataset,
         path=f"./data/cibench/{lib}",
+        internet_check=False,
         reader_cfg=cibench_reader_cfg,
         infer_cfg=cibench_infer_cfg,
         eval_cfg=cibench_eval_cfg,

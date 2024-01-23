@@ -39,22 +39,27 @@ from .flores import *  # noqa: F401, F403
 from .game24 import *  # noqa: F401, F403
 from .GaokaoBench import *  # noqa: F401, F403
 from .govrepcrs import *  # noqa: F401, F403
+from .gpqa import *  # noqa: F401, F403
 from .gsm8k import *  # noqa: F401, F403
 from .gsm_hard import *  # noqa: F401, F403
 from .hellaswag import *  # noqa: F401, F403
 from .huggingface import *  # noqa: F401, F403
 from .humaneval import *  # noqa: F401, F403
 from .humanevalx import *  # noqa: F401, F403
+from .hungarian_math import *  # noqa: F401, F403
 from .infinitebench import *  # noqa: F401, F403
 from .iwslt2017 import *  # noqa: F401, F403
 from .jigsawmultilingual import *  # noqa: F401, F403
+from .jsonl import JsonlDataset  # noqa: F401, F403
 from .kaoshi import KaoshiDataset, KaoshiEvaluator  # noqa: F401, F403
 from .lambada import *  # noqa: F401, F403
 from .lawbench import *  # noqa: F401, F403
 from .lcsts import *  # noqa: F401, F403
 from .leval import *  # noqa: F401, F403
 from .longbench import *  # noqa: F401, F403
+from .mastermath2024v1 import *  # noqa: F401, F403
 from .math import *  # noqa: F401, F403
+from .math401 import *  # noqa: F401, F403
 from .mathbench import *  # noqa: F401, F403
 from .mbpp import *  # noqa: F401, F403
 from .medbench import *  # noqa: F401, F403
@@ -78,10 +83,7 @@ from .siqa import *  # noqa: F401, F403
 from .squad20 import SQuAD20Dataset, SQuAD20Evaluator  # noqa: F401, F403
 from .storycloze import *  # noqa: F401, F403
 from .strategyqa import *  # noqa: F401, F403
-from .subject_alignmentbench import AlignmentBenchDataset  # noqa: F401, F403
-from .subject_corev2 import Corev2Dataset  # noqa: F401, F403
-from .subject_creationv01 import Creationv01Dataset  # noqa: F401, F403
-from .subjective_cmp import SubjectiveCmpDataset  # noqa: F401, F403
+from .subjective import *  # noqa: F401, F403
 from .summedits import *  # noqa: F401, F403
 from .summscreen import *  # noqa: F401, F403
 from .svamp import *  # noqa: F401, F403
